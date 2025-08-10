@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Product - Inventory Management System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-boxes"></i>
+                <span>IMS Pro</span>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="/" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/products" class="nav-link active">Products</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/inventory" class="nav-link">Inventory</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/reports" class="nav-link">Reports</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/about" class="nav-link">About</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/login" class="nav-link login-btn">Login</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Add Product Form -->
+    <div class="form-container">
+        <div class="form-card">
+            <h1 class="form-title">
+                <i class="fas fa-plus-circle"></i>
+                Add New Product
+            </h1>
+            
+            <!-- Success Message -->
+            <div th:if="${success}" class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                <span th:text="${success}"></span>
+            </div>
+            
+            <!-- Error Message -->
+            <div th:if="${error}" class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span th:text="${error}"></span>
+            </div>
+            
+            <form th:action="@{/products/add}" method="post" th:object="${product}">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">
+                            <i class="fas fa-tag"></i>
+                            Product Name
+                        </label>
+                        <input type="text" id="name" th:field="*{name}" required placeholder="Enter product name">
+                        <span th:if="${#fields.hasErrors('name')}" class="error-message" th:errors="*{name}"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="category">
+                            <i class="fas fa-folder"></i>
+                            Category
+                        </label>
+                        <select id="category" th:field="*{category}" required>
+                            <option value="">Select Category</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Clothing">Clothing</option>
+                            <option value="Books">Books</option>
+                            <option value="Home & Garden">Home & Garden</option>
+                            <option value="Sports">Sports</option>
+                            <option value="Automotive">Automotive</option>
+                            <option value="Health & Beauty">Health & Beauty</option>
+                            <option value="Toys">Toys</option>
+                            <option value="Food & Beverages">Food & Beverages</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <span th:if="${#fields.hasErrors('category')}" class="error-message" th:errors="*{category}"></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">
+                        <i class="fas fa-align-left"></i>
+                        Description
+                    </label>
+                    <textarea id="description" th:field="*{description}" rows="4" placeholder="Enter product description"></textarea>
+                    <span th:if="${#fields.hasErrors('description')}" class="error-message" th:errors="*{description}"></span>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="price">
+                            <i class="fas fa-dollar-sign"></i>
+                            Price
+                        </label>
+                        <input type="number" id="price" th:field="*{price}" step="0.01" min="0" required placeholder="0.00">
+                        <span th:if="${#fields.hasErrors('price')}" class="error-message" th:errors="*{price}"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity">
+                            <i class="fas fa-boxes"></i>
+                            Quantity
+                        </label>
+                        <input type="number" id="quantity" th:field="*{quantity}" min="0" required placeholder="0">
+                        <span th:if="${#fields.hasErrors('quantity')}" class="error-message" th:errors="*{quantity}"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sku">
+                            <i class="fas fa-barcode"></i>
+                            SKU (Stock Keeping Unit)
+                        </label>
+                        <input type="text" id="sku" th:field="*{sku}" placeholder="Enter SKU">
+                        <span th:if="${#fields.hasErrors('sku')}" class="error-message" th:errors="*{sku}"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="supplier">
+                            <i class="fas fa-truck"></i>
+                            Supplier
+                        </label>
+                        <input type="text" id="supplier" th:field="*{supplier}" placeholder="Enter supplier name">
+                        <span th:if="${#fields.hasErrors('supplier')}" class="error-message" th:errors="*{supplier}"></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Storage Location
+                    </label>
+                    <input type="text" id="location" th:field="*{location}" placeholder="Enter storage location">
+                    <span th:if="${#fields.hasErrors('location')}" class="error-message" th:errors="*{location}"></span>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Save Product
+                    </button>
+                    <a href="/products" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>IMS Pro</h3>
+                    <p>Advanced inventory management solution for modern businesses.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/products">Products</a></li>
+                        <li><a href="/inventory">Inventory</a></li>
+                        <li><a href="/reports">Reports</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="/help">Help Center</a></li>
+                        <li><a href="/contact">Contact Us</a></li>
+                        <li><a href="/docs">Documentation</a></li>
+                        <li><a href="/api">API Reference</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact Info</h4>
+                    <div class="contact-info">
+                        <p><i class="fas fa-map-marker-alt"></i> 123 Business St, Tech City, TC 12345</p>
+                        <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                        <p><i class="fas fa-envelope"></i> info@imspro.com</p>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 IMS Pro. All rights reserved. | Designed with <i class="fas fa-heart"></i> for modern businesses</p>
+            </div>
+        </div>
+    </footer>
+
+    <script th:src="@{/js/main.js}"></script>
+</body>
+</html>
