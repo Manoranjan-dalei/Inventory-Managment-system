@@ -1,17 +1,13 @@
-package com.Inventory.demo.entity;
+package com.Inventory.demo.dto;
 
-import jakarta.persistence.*;
+import com.Inventory.demo.entity.Product;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "products")
-public class Product {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ProductDto {
     private Long id;
 
     @NotBlank(message = "Product name is required")
@@ -30,53 +26,45 @@ public class Product {
     @PositiveOrZero(message = "Quantity must be zero or positive")
     private int quantity;
 
-    @Enumerated(EnumType.STRING)
-    private ProductStatus status;
-
+    private Product.ProductStatus status;
     private String sku;
     private String supplier;
     private String location;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public enum ProductStatus {
-        IN_STOCK, LOW_STOCK, OUT_OF_STOCK
-    }
-
     // Constructors
-    public Product() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-        this.status = ProductStatus.IN_STOCK;
+    public ProductDto() {
     }
 
-    public Product(String name, String description, String category, double price, int quantity) {
-        this();
-        this.name = name;
-        this.description = description;
-        this.category = category;
-        this.price = price;
-        this.quantity = quantity;
-        updateStatus();
+    public ProductDto(Product product) {
+        this.id = product.getId();
+        this.name = product.getName();
+        this.description = product.getDescription();
+        this.category = product.getCategory();
+        this.price = product.getPrice();
+        this.quantity = product.getQuantity();
+        this.status = product.getStatus();
+        this.sku = product.getSku();
+        this.supplier = product.getSupplier();
+        this.location = product.getLocation();
+        this.createdAt = product.getCreatedAt();
+        this.updatedAt = product.getUpdatedAt();
     }
 
-    public Product(String name, String description, String category, double price, int quantity,
-            String sku, String supplier, String location) {
-        this(name, description, category, price, quantity);
-        this.sku = sku;
-        this.supplier = supplier;
-        this.location = location;
-    }
-
-    // Method to update status based on quantity
-    public void updateStatus() {
-        if (this.quantity == 0) {
-            this.status = ProductStatus.OUT_OF_STOCK;
-        } else if (this.quantity <= 10) {
-            this.status = ProductStatus.LOW_STOCK;
-        } else {
-            this.status = ProductStatus.IN_STOCK;
-        }
+    // Convert DTO to Entity
+    public Product toEntity() {
+        Product product = new Product();
+        product.setId(this.id);
+        product.setName(this.name);
+        product.setDescription(this.description);
+        product.setCategory(this.category);
+        product.setPrice(this.price);
+        product.setQuantity(this.quantity);
+        product.setSku(this.sku);
+        product.setSupplier(this.supplier);
+        product.setLocation(this.location);
+        return product;
     }
 
     // Getters and Setters
@@ -126,14 +114,13 @@ public class Product {
 
     public void setQuantity(int quantity) {
         this.quantity = quantity;
-        updateStatus();
     }
 
-    public ProductStatus getStatus() {
+    public Product.ProductStatus getStatus() {
         return status;
     }
 
-    public void setStatus(ProductStatus status) {
+    public void setStatus(Product.ProductStatus status) {
         this.status = status;
     }
 
@@ -175,29 +162,5 @@ public class Product {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
-        updateStatus();
-    }
-
-    @Override
-    public String toString() {
-        return "Product{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", category='" + category + '\'' +
-                ", price=" + price +
-                ", quantity=" + quantity +
-                ", status=" + status +
-                ", sku='" + sku + '\'' +
-                ", supplier='" + supplier + '\'' +
-                ", location='" + location + '\'' +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                '}';
     }
 }

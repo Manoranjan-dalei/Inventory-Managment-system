@@ -1,10 +1,9 @@
 package com.Inventory.demo.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
@@ -13,14 +12,30 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @NotBlank(message = "Username is required")
+    @Column(unique = true)
     private String username;
+
+    @NotBlank(message = "Password is required")
     private String password;
+
+    @Email(message = "Email should be valid")
+    @Column(unique = true)
     private String email;
-    private String role; // "ADMIN" or "USER"
+
+    @Enumerated(EnumType.STRING)
+    @NotNull(message = "Role is required")
+    private UserRole role;
+
     private String fullName;
     private boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime lastLogin;
+
+    public enum UserRole {
+        ADMIN, USER
+    }
 
     // Constructors
     public User() {
@@ -28,7 +43,7 @@ public class User {
         this.active = true;
     }
 
-    public User(String username, String password, String email, String role, String fullName) {
+    public User(String username, String password, String email, UserRole role, String fullName) {
         this();
         this.username = username;
         this.password = password;
@@ -70,11 +85,11 @@ public class User {
         this.email = email;
     }
 
-    public String getRole() {
+    public UserRole getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(UserRole role) {
         this.role = role;
     }
 
@@ -111,7 +126,12 @@ public class User {
     }
 
     public boolean isAdmin() {
-        return "ADMIN".equalsIgnoreCase(this.role);
+        return UserRole.ADMIN.equals(this.role);
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.lastLogin = LocalDateTime.now();
     }
 
     @Override
@@ -120,7 +140,7 @@ public class User {
                 "id=" + id +
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
-                ", role='" + role + '\'' +
+                ", role=" + role +
                 ", fullName='" + fullName + '\'' +
                 ", active=" + active +
                 ", createdAt=" + createdAt +

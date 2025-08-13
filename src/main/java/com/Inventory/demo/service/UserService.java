@@ -28,6 +28,14 @@ public class UserService {
         return userRepository.findByUsername(username);
     }
 
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username).orElse(null);
+    }
+
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email).orElse(null);
+    }
+
     public User saveUser(User user) {
         if (user.getId() == null) {
             user.setCreatedAt(LocalDateTime.now());
@@ -68,8 +76,8 @@ public class UserService {
         return userRepository.findByEmail(email).isPresent();
     }
 
-    public List<User> getUsersByRole(String role) {
-        return userRepository.findByRoleIgnoreCase(role);
+    public List<User> getUsersByRole(User.UserRole role) {
+        return userRepository.findByRole(role);
     }
 
     public long getTotalUsers() {
@@ -84,11 +92,11 @@ public class UserService {
     public void initializeDefaultUsers() {
         if (userRepository.count() == 0) {
             // Create admin user
-            User admin = new User("admin", "admin123", "admin@imspro.com", "ADMIN", "System Administrator");
+            User admin = new User("admin", "admin123", "admin@imspro.com", User.UserRole.ADMIN, "System Administrator");
             userRepository.save(admin);
 
             // Create regular user
-            User user = new User("user", "user123", "user@imspro.com", "USER", "Regular User");
+            User user = new User("user", "user123", "user@imspro.com", User.UserRole.USER, "Regular User");
             userRepository.save(user);
         }
     }

@@ -1,269 +1,148 @@
 package com.Inventory.demo.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
+import com.Inventory.demo.dto.ProductDto;
 import com.Inventory.demo.entity.Product;
 import com.Inventory.demo.service.ProductService;
-import java.util.Optional;
-import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-@Controller
-@RequestMapping("/products")
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping("/api/products")
+@CrossOrigin(origins = "http://localhost:5173")
 public class ProductController {
-
-    private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
 
     @Autowired
     private ProductService productService;
 
-    // Home page
-    @GetMapping("/")
-    public String home() {
-        return "index";
-    }
-
-    // List all products
+    // Get all products
     @GetMapping
-    public String listProducts(Model model) {
+    public ResponseEntity<List<ProductDto>> getAllProducts() {
         try {
             List<Product> products = productService.getAllProducts();
-            model.addAttribute("products", products);
-            logger.info("Retrieved {} products", products.size());
+            List<ProductDto> productDtos = products.stream()
+                    .map(ProductDto::new)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(productDtos);
         } catch (Exception e) {
-            logger.error("Error retrieving products", e);
-            model.addAttribute("error", "Failed to load products");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        return "list";
     }
 
-    // Show form to add a new product
-    @GetMapping("/add")
-    public String showAddForm(Model model) {
-        model.addAttribute("product", new Product());
-        return "add";
-    }
-
-    // Save a new product
-    @PostMapping("/add")
-    public String saveProduct(@Valid @ModelAttribute Product product, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+    // Get product by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductDto> getProductById(@PathVariable Long id) {
         try {
-            // Check for validation errors
-            if (bindingResult.hasErrors()) {
-                logger.error("Validation errors: {}", bindingResult.getAllErrors());
-                redirectAttributes.addFlashAttribute("error", "Please fix the validation errors");
-                return "redirect:/products/add";
+            Optional<Product> productOpt = productService.getProductById(id);
+            if (productOpt.isPresent()) {
+                return ResponseEntity.ok(new ProductDto(productOpt.get()));
+            } else {
+                return ResponseEntity.notFound().build();
             }
-            
-            // Debug logging to see what data is being received
-            logger.info("Received product data:");
-            logger.info("Name: {}", product.getName());
-            logger.info("Category: {}", product.getCategory());
-            logger.info("Description: {}", product.getDescription());
-            logger.info("Price: {}", product.getPrice());
-            logger.info("Quantity: {}", product.getQuantity());
-            logger.info("SKU: {}", product.getSku());
-            logger.info("Supplier: {}", product.getSupplier());
-            logger.info("Location: {}", product.getLocation());
-            
-            // Save the product
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // Create new product
+    @PostMapping
+    public ResponseEntity<ProductDto> createProduct(@Valid @RequestBody ProductDto productDto) {
+        try {
+            Product product = productDto.toEntity();
             Product savedProduct = productService.saveProduct(product);
-            
-            // Debug logging to see what was actually saved
-            logger.info("Saved product data:");
-            logger.info("ID: {}", savedProduct.getId());
-            logger.info("Name: {}", savedProduct.getName());
-            logger.info("Category: {}", savedProduct.getCategory());
-            logger.info("Description: {}", savedProduct.getDescription());
-            logger.info("Price: {}", savedProduct.getPrice());
-            logger.info("Quantity: {}", savedProduct.getQuantity());
-            logger.info("SKU: {}", savedProduct.getSku());
-            logger.info("Supplier: {}", savedProduct.getSupplier());
-            logger.info("Location: {}", savedProduct.getLocation());
-            
-            redirectAttributes.addFlashAttribute("success", "Product added successfully!");
-            logger.info("Product saved successfully: {}", product.getName());
+            return ResponseEntity.status(HttpStatus.CREATED).body(new ProductDto(savedProduct));
         } catch (Exception e) {
-            logger.error("Error saving product", e);
-            redirectAttributes.addFlashAttribute("error", "Failed to save product: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        return "redirect:/products";
     }
 
-    // Show form to edit a product
-    @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+    // Update product
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductDto> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductDto productDto) {
         try {
             Optional<Product> productOpt = productService.getProductById(id);
-            if (productOpt.isPresent()) {
-                model.addAttribute("product", productOpt.get());
-                logger.info("Editing product: {}", productOpt.get().getName());
-            } else {
-                redirectAttributes.addFlashAttribute("error", "Product not found");
-                return "redirect:/products";
+            if (!productOpt.isPresent()) {
+                return ResponseEntity.notFound().build();
             }
+
+            Product existingProduct = productOpt.get();
+            // Update fields
+            existingProduct.setName(productDto.getName());
+            existingProduct.setDescription(productDto.getDescription());
+            existingProduct.setCategory(productDto.getCategory());
+            existingProduct.setPrice(productDto.getPrice());
+            existingProduct.setQuantity(productDto.getQuantity());
+            existingProduct.setSku(productDto.getSku());
+            existingProduct.setSupplier(productDto.getSupplier());
+            existingProduct.setLocation(productDto.getLocation());
+
+            Product updatedProduct = productService.saveProduct(existingProduct);
+            return ResponseEntity.ok(new ProductDto(updatedProduct));
         } catch (Exception e) {
-            logger.error("Error retrieving product for editing", e);
-            redirectAttributes.addFlashAttribute("error", "Failed to load product");
-            return "redirect:/products";
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        return "edit";
     }
 
-    // Update a product
-    @PostMapping("/edit")
-    public String updateProduct(@Valid @ModelAttribute Product product, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
-        try {
-            // Check for validation errors
-            if (bindingResult.hasErrors()) {
-                logger.error("Validation errors: {}", bindingResult.getAllErrors());
-                redirectAttributes.addFlashAttribute("error", "Please fix the validation errors");
-                return "redirect:/products/edit/" + product.getId();
-            }
-            
-            product.setUpdatedAt(java.time.LocalDateTime.now());
-            productService.saveProduct(product);
-            redirectAttributes.addFlashAttribute("success", "Product updated successfully!");
-            logger.info("Product updated successfully: {}", product.getName());
-        } catch (Exception e) {
-            logger.error("Error updating product", e);
-            redirectAttributes.addFlashAttribute("error", "Failed to update product");
-        }
-        return "redirect:/products";
-    }
-
-    // Delete a product
-    @GetMapping("/delete/{id}")
-    public String deleteProduct(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    // Delete product
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         try {
             Optional<Product> productOpt = productService.getProductById(id);
-            if (productOpt.isPresent()) {
-                productService.deleteProduct(id);
-                redirectAttributes.addFlashAttribute("success", "Product deleted successfully!");
-                logger.info("Product deleted successfully: {}", productOpt.get().getName());
-            } else {
-                redirectAttributes.addFlashAttribute("error", "Product not found");
+            if (!productOpt.isPresent()) {
+                return ResponseEntity.notFound().build();
             }
+            productService.deleteProduct(id);
+            return ResponseEntity.noContent().build();
         } catch (Exception e) {
-            logger.error("Error deleting product", e);
-            redirectAttributes.addFlashAttribute("error", "Failed to delete product");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        return "redirect:/products";
     }
 
-    // Search products
+    // Search products by name or category
     @GetMapping("/search")
-    public String searchProducts(@RequestParam String query, Model model) {
+    public ResponseEntity<List<ProductDto>> searchProducts(@RequestParam String query) {
         try {
             List<Product> products = productService.searchProducts(query);
-            model.addAttribute("products", products);
-            model.addAttribute("searchQuery", query);
-            logger.info("Search performed for: '{}', found {} results", query, products.size());
+            List<ProductDto> productDtos = products.stream()
+                    .map(ProductDto::new)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(productDtos);
         } catch (Exception e) {
-            logger.error("Error searching products", e);
-            model.addAttribute("error", "Failed to search products");
-        }
-        return "list";
-    }
-
-    // API endpoints for AJAX calls
-    @GetMapping("/api/products")
-    @ResponseBody
-    public List<Product> getAllProductsApi() {
-        return productService.getAllProducts();
-    }
-
-    @GetMapping("/api/products/{id}")
-    @ResponseBody
-    public Optional<Product> getProductApi(@PathVariable Long id) {
-        return productService.getProductById(id);
-    }
-
-    @PostMapping("/api/products")
-    @ResponseBody
-    public Product createProductApi(@RequestBody Product product) {
-        return productService.saveProduct(product);
-    }
-
-    @PutMapping("/api/products/{id}")
-    @ResponseBody
-    public Product updateProductApi(@PathVariable Long id, @RequestBody Product product) {
-        product.setId(id);
-        product.setUpdatedAt(java.time.LocalDateTime.now());
-        return productService.saveProduct(product);
-    }
-
-    @DeleteMapping("/api/products/{id}")
-    @ResponseBody
-    public String deleteProductApi(@PathVariable Long id) {
-        productService.deleteProduct(id);
-        return "Product deleted successfully";
-    }
-
-    // Debug endpoint to check database
-    @GetMapping("/debug/database")
-    @ResponseBody
-    public String debugDatabase() {
-        try {
-            List<Product> allProducts = productService.getAllProducts();
-            StringBuilder result = new StringBuilder();
-            result.append("Database Debug Information:\n");
-            result.append("Total products: ").append(allProducts.size()).append("\n\n");
-            
-            for (Product product : allProducts) {
-                result.append("Product ID: ").append(product.getId()).append("\n");
-                result.append("Name: ").append(product.getName()).append("\n");
-                result.append("Category: ").append(product.getCategory()).append("\n");
-                result.append("Description: ").append(product.getDescription()).append("\n");
-                result.append("Price: ").append(product.getPrice()).append("\n");
-                result.append("Quantity: ").append(product.getQuantity()).append("\n");
-                result.append("SKU: ").append(product.getSku()).append("\n");
-                result.append("Supplier: ").append(product.getSupplier()).append("\n");
-                result.append("Location: ").append(product.getLocation()).append("\n");
-                result.append("Created: ").append(product.getCreatedAt()).append("\n");
-                result.append("Updated: ").append(product.getUpdatedAt()).append("\n");
-                result.append("---\n");
-            }
-            
-            return result.toString();
-        } catch (Exception e) {
-            return "Error: " + e.getMessage();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // Test endpoint to create a simple product
-    @GetMapping("/test/create-product")
-    @ResponseBody
-    public String testCreateProduct() {
+    // Get products by category
+    @GetMapping("/category/{category}")
+    public ResponseEntity<List<ProductDto>> getProductsByCategory(@PathVariable String category) {
         try {
-            Product testProduct = new Product();
-            testProduct.setName("Test Product");
-            testProduct.setCategory("Test Category");
-            testProduct.setDescription("This is a test product");
-            testProduct.setPrice(99.99);
-            testProduct.setQuantity(10);
-            testProduct.setSku("TEST-SKU-001");
-            testProduct.setSupplier("Test Supplier");
-            testProduct.setLocation("Test Location");
-            
-            Product savedProduct = productService.saveProduct(testProduct);
-            
-            return "Test product created successfully!\n" +
-                   "ID: " + savedProduct.getId() + "\n" +
-                   "Name: " + savedProduct.getName() + "\n" +
-                   "Category: " + savedProduct.getCategory() + "\n" +
-                   "Price: " + savedProduct.getPrice() + "\n" +
-                   "Quantity: " + savedProduct.getQuantity();
+            List<Product> products = productService.getProductsByCategory(category);
+            List<ProductDto> productDtos = products.stream()
+                    .map(ProductDto::new)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(productDtos);
         } catch (Exception e) {
-            return "Error creating test product: " + e.getMessage();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // Get low stock products
+    @GetMapping("/low-stock")
+    public ResponseEntity<List<ProductDto>> getLowStockProducts() {
+        try {
+            List<Product> products = productService.getLowStockProducts(10); // Default threshold of 10
+            List<ProductDto> productDtos = products.stream()
+                    .map(ProductDto::new)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(productDtos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

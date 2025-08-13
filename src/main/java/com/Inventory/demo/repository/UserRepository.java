@@ -15,7 +15,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     Optional<User> findByEmail(String email);
     
-    List<User> findByRoleIgnoreCase(String role);
+    List<User> findByRole(User.UserRole role);
     
     List<User> findByActive(boolean active);
     
@@ -25,5 +25,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findRecentlyActiveUsers(@Param("since") java.time.LocalDateTime since);
     
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = :role")
-    long countByRole(@Param("role") String role);
+    long countByRole(@Param("role") User.UserRole role);
 }
